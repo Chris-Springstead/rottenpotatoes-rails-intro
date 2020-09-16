@@ -11,21 +11,39 @@ class MoviesController < ApplicationController
 
   def index
     @all_ratings = ["G", "PG", "PG-13", "R"]
-    @ratings_picked = []
     
-    if params[:ratings]
-      @ratings_picked.push(params[:ratings].keys)
-    else
-      @ratings_picked = @all_ratings
-    end
+    @ratings_picked = []
+    @sort_got = ""
+    red = false
     
     if params[:sort]
-      @movies = Movie.order(params[:sort])
+      @sort_got = params[:sort]
+      session[:sort] = @sort_got
+    elsif session[:sort]
+      @sort_got = session[:sort]
+      red = true
     else
-      @movies = Movie.with_ratings(@ratings_picked)
+      @sort = nil
     end
-  end
+    
+    if params[:ratings]
+      params[:ratings].each {|k, v| @ratings_picked << k} # since array of hash
+      session[:ratings] = @ratings_picked
+    elsif session[:ratings]
+        @ratings_picked = session[:ratings]
+        red = true
+    else
+        @ratings_picked = nil
+    end
+    
+    if red
+      redirect_to movies_path(:ratings => @ratings_picked, :sort => @sort_got)
+    else
+      @movies = Movie.with_ratings(@ratings_picked).order(@sort_got)
+    end
 
+  end
+  
   def new
     # default: render 'new' template
   end
